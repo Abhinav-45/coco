@@ -321,7 +321,7 @@ tokenInfo getNextToken(twinBuffer B)
                     /* just '=' alone is not valid */
                     if (n != EOF) retractChar(B);
                     /* report the '=' as unknown symbol */
-                    printf("Line No %d: Error : Unknown Symbol <%c>\n", lineNumber, c);
+                    printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, c);
                     tk->tokenType = TK_ERROR;
                     tk->lexeme[0] = c; tk->lexeme[1] = '\0';
                     state = ST_DONE;
@@ -338,7 +338,7 @@ tokenInfo getNextToken(twinBuffer B)
                     return tk;
                 } else {
                     if (n != EOF) retractChar(B);
-                    printf("Line No %d: Error : Unknown Symbol <%c>\n", lineNumber, c);
+                    printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, c);
                     tk->tokenType = TK_ERROR;
                     tk->lexeme[0] = c; tk->lexeme[1] = '\0';
                     state = ST_DONE;
@@ -359,12 +359,12 @@ tokenInfo getNextToken(twinBuffer B)
                 if (n1 == '&') {
                     /* consumed & and &, but n2 is wrong */
                     if (n2 != EOF) retractChar(B);
-                    printf("Line no: %d : Error: Unknown pattern <&&>\n", lineNumber);
+                    printf("Line %d Error: Unknown pattern <&&>\n", lineNumber);
                 } else {
                     /* first & followed by non-& */
                     if (n2 != EOF) retractChar(B);
                     if (n1 != EOF) retractChar(B);
-                    printf("Line No %d : Error: Unknown Symbol <%c>\n", lineNumber, c);
+                    printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, c);
                 }
                 tk->tokenType = TK_ERROR;
                 tk->lexeme[0] = '&'; tk->lexeme[1] = '\0';
@@ -383,11 +383,11 @@ tokenInfo getNextToken(twinBuffer B)
                 }
                 if (n1 == '@') {
                     if (n2 != EOF) retractChar(B);
-                    printf("Line no: %d : Error: Unknown pattern <@@>\n", lineNumber);
+                    printf("Line %d Error: Unknown pattern <@@>\n", lineNumber);
                 } else {
                     if (n2 != EOF) retractChar(B);
                     if (n1 != EOF) retractChar(B);
-                    printf("Line No %d : Error: Unknown Symbol <%c>\n", lineNumber, c);
+                    printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, c);
                 }
                 tk->tokenType = TK_ERROR;
                 tk->lexeme[0] = '@'; tk->lexeme[1] = '\0';
@@ -445,7 +445,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
 
             /* anything else is an unknown symbol */
-            printf("Line No %d : Error: Unknown Symbol <%c>\n", lineNumber, c);
+            printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, c);
             tk->tokenType = TK_ERROR;
             tk->lexeme[0] = c; tk->lexeme[1] = '\0';
             state = ST_DONE;
@@ -500,7 +500,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
             /* "<--" without third '-' is an error */
             retractChar(B);
-            printf("Line no: %d : Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
+            printf("Line %d Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -626,7 +626,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
             /* underscore followed by non-letter is an error */
             retractChar(B);
-            printf("Line No %d : Error: Unknown Symbol <%c>\n", lineNumber, '_');
+            printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, '_');
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -674,7 +674,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
             /* # followed by non-lowercase is error */
             retractChar(B);
-            printf("Line No %d : Error: Unknown Symbol <%c>\n", lineNumber, '#');
+            printf("Line %d Error: Unknown Symbol <%c>\n", lineNumber, '#');
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -721,7 +721,7 @@ tokenInfo getNextToken(twinBuffer B)
              * then "abc" will be tokenized as TK_FIELDID on the next call.
              */
             retractChar(B);     /* retract current non-digit */
-            printf("Line no: %d : Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
+            printf("Line %d Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -739,7 +739,7 @@ tokenInfo getNextToken(twinBuffer B)
              * Retract the current char so it can be processed next.
              */
             retractChar(B);
-            printf("Line no: %d : Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
+            printf("Line %d Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -771,7 +771,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
             /* E not followed by sign or digit - error */
             retractChar(B);
-            printf("Line no: %d : Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
+            printf("Line %d Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -785,7 +785,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
             /* E+/- not followed by digit - error */
             retractChar(B);
-            printf("Line no: %d : Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
+            printf("Line %d Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -800,7 +800,7 @@ tokenInfo getNextToken(twinBuffer B)
             }
             /* only one digit in exponent - error */
             retractChar(B);
-            printf("Line no: %d : Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
+            printf("Line %d Error: Unknown pattern <%s>\n", lineNumber, tk->lexeme);
             tk->tokenType = TK_ERROR;
             state = ST_DONE;
             break;
@@ -824,11 +824,11 @@ tokenInfo getNextToken(twinBuffer B)
 
     /* handle identifier length limits */
     if (tk->tokenType == TK_ID && (int)strlen(tk->lexeme) > 20) {
-        printf("Line No %d: Error :Variable Identifier is longer than the prescribed length of 20 characters.\n", tk->lineNo);
+        printf("Line %d Error: Variable Identifier is longer than the prescribed length of 20 characters.\n", tk->lineNo);
         tk->tokenType = TK_ERROR;
     }
     if (tk->tokenType == TK_FUNID && (int)strlen(tk->lexeme) > 30) {
-        printf("Line No %d: Error :Function Identifier is longer than the prescribed length of 30 characters.\n", tk->lineNo);
+        printf("Line %d Error: Function Identifier is longer than the prescribed length of 30 characters.\n", tk->lineNo);
         tk->tokenType = TK_ERROR;
     }
 
