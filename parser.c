@@ -11,16 +11,24 @@
 /* ============================================================ */
 
 const char *nonTerminalStrings[] = {
-    "program",          "otherFunctions",   "function",
-    "mainFunction",     "input",            "output",
-    "parameterList",    "morePL",           "dataType",
-    "stmts",            "stmt",             "typeStmt",
-    "assignmentStmt",   "callAssignStmt",   "callStmt",
-    "actualParamList",  "moreActual",       "iterativeStmt",
-    "conditionalStmt",  "elseStmt",         "ioStmt",
-    "returnStmt",       "optReturnVal",     "boolExpr",
-    "relOp",            "expr",             "exprPrime",
-    "term",             "termPrime",        "factor"
+    "program",              "otherFunctions",       "function",
+    "mainFunction",         "input_par",            "output_par",
+    "parameterList",        "remainingList",        "dataType",
+    "primitiveDatatype",    "constructedDatatype",  "stmts",
+    "typeDefinitions",      "actualOrRedefined",    "typeDefinition",
+    "fieldDefinitions",     "fieldDefinition",      "fieldType",
+    "moreFields",           "declarations",         "declaration",
+    "globalOrNot",          "otherStmts",           "stmt",
+    "assignmentStmt",       "singleOrRecId",        "optionSingleConstructed",
+    "oneExpansion",         "moreExpansions",       "funCallStmt",
+    "outputParameters",     "inputParameters",      "iterativeStmt",
+    "conditionalStmt",      "elsePart",             "ioStmt",
+    "returnStmt",           "optReturnVal",         "boolExpr",
+    "var",                  "logicalOp",            "relOp",
+    "expr",                 "exprPrime",            "term",
+    "termPrime",            "factor",               "highPrecOp",
+    "lowPrecOp",            "idList",               "moreIds",
+    "definetypeStmt",       "A"
 };
 
 /* ============================================================ */
@@ -45,69 +53,103 @@ static void addProd(Grammar *G, NonTerminal lhs,
 #define NT 0   /* isTerminal = false */
 
 /*
- * Grammar productions (LL(1)):
+ * Grammar productions (LL(1)) per Modified LL(1) Grammar document:
  *
- *  P0:  program          → otherFunctions mainFunction
- *  P1:  otherFunctions   → function otherFunctions
- *  P2:  otherFunctions   → ε
- *  P3:  function         → TK_FUNID input output stmts TK_END
- *  P4:  mainFunction     → TK_MAIN stmts TK_END
- *  P5:  input            → TK_INPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR
- *  P6:  input            → ε
- *  P7:  output           → TK_OUTPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR TK_SEM
- *  P8:  output           → ε
- *  P9:  parameterList    → dataType TK_ID morePL
- *  P10: morePL           → TK_COMMA dataType TK_ID morePL
- *  P11: morePL           → ε
- *  P12: dataType         → TK_INT
- *  P13: dataType         → TK_REAL
- *  P14: dataType         → TK_ID
- *  P15: dataType         → TK_FIELDID
- *  P16: stmts            → stmt stmts
- *  P17: stmts            → ε
- *  P18: stmt             → typeStmt
- *  P19: stmt             → assignmentStmt
- *  P20: stmt             → callAssignStmt
- *  P21: stmt             → iterativeStmt
- *  P22: stmt             → conditionalStmt
- *  P23: stmt             → ioStmt
- *  P24: stmt             → returnStmt
- *  P25: typeStmt         → TK_TYPE dataType TK_COLON TK_ID TK_SEM
- *  P26: assignmentStmt   → TK_ID TK_ASSIGNOP expr TK_SEM
- *  P27: callAssignStmt   → TK_SQL TK_ID TK_SQR TK_ASSIGNOP callStmt TK_SEM
- *  P28: callStmt         → TK_CALL TK_FUNID TK_WITH TK_PARAMETERS TK_SQL actualParamList TK_SQR
- *  P29: actualParamList  → TK_ID moreActual
- *  P30: moreActual       → TK_COMMA TK_ID moreActual
- *  P31: moreActual       → ε
- *  P32: iterativeStmt    → TK_WHILE TK_OP boolExpr TK_CL stmts TK_ENDWHILE
- *  P33: conditionalStmt  → TK_IF TK_OP boolExpr TK_CL TK_THEN stmts elseStmt TK_ENDIF
- *  P34: elseStmt         → TK_ELSE stmts
- *  P35: elseStmt         → ε
- *  P36: ioStmt           → TK_READ TK_OP TK_ID TK_CL TK_SEM
- *  P37: ioStmt           → TK_WRITE TK_OP expr TK_CL TK_SEM
- *  P38: returnStmt       → TK_RETURN optReturnVal TK_SEM
- *  P39: optReturnVal     → TK_SQL TK_ID TK_SQR
- *  P40: optReturnVal     → ε
- *  P41: boolExpr         → expr relOp expr
- *  P42: boolExpr         → TK_NOT boolExpr
- *  P43: relOp            → TK_LT
- *  P44: relOp            → TK_LE
- *  P45: relOp            → TK_EQ
- *  P46: relOp            → TK_GT
- *  P47: relOp            → TK_GE
- *  P48: relOp            → TK_NE
- *  P49: expr             → term exprPrime
- *  P50: exprPrime        → TK_PLUS  term exprPrime
- *  P51: exprPrime        → TK_MINUS term exprPrime
- *  P52: exprPrime        → ε
- *  P53: term             → factor termPrime
- *  P54: termPrime        → TK_MUL factor termPrime
- *  P55: termPrime        → TK_DIV factor termPrime
- *  P56: termPrime        → ε
- *  P57: factor           → TK_OP expr TK_CL
- *  P58: factor           → TK_ID
- *  P59: factor           → TK_NUM
- *  P60: factor           → TK_RNUM
+ *  P0:  program             → otherFunctions mainFunction
+ *  P1:  otherFunctions      → function otherFunctions
+ *  P2:  otherFunctions      → ε
+ *  P3:  function            → TK_FUNID input_par output_par TK_SEM stmts TK_END
+ *  P4:  mainFunction        → TK_MAIN stmts TK_END
+ *  P5:  input_par           → TK_INPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR
+ *  P6:  output_par          → TK_OUTPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR
+ *  P7:  output_par          → ε
+ *  P8:  parameterList       → dataType TK_ID remainingList
+ *  P9:  dataType            → primitiveDatatype
+ *  P10: dataType            → constructedDatatype
+ *  P11: primitiveDatatype   → TK_INT
+ *  P12: primitiveDatatype   → TK_REAL
+ *  P13: constructedDatatype → TK_RECORD TK_RUID
+ *  P14: constructedDatatype → TK_UNION TK_RUID
+ *  P15: constructedDatatype → TK_RUID
+ *  P16: remainingList       → TK_COMMA parameterList
+ *  P17: remainingList       → ε
+ *  P18: stmts               → typeDefinitions declarations otherStmts returnStmt
+ *  P19: typeDefinitions     → actualOrRedefined typeDefinitions
+ *  P20: typeDefinitions     → ε
+ *  P21: actualOrRedefined   → typeDefinition
+ *  P22: actualOrRedefined   → definetypeStmt
+ *  P23: typeDefinition      → TK_RECORD TK_RUID fieldDefinitions TK_ENDRECORD
+ *  P24: typeDefinition      → TK_UNION TK_RUID fieldDefinitions TK_ENDUNION
+ *  P25: fieldDefinitions    → fieldDefinition fieldDefinition moreFields
+ *  P26: fieldDefinition     → TK_TYPE fieldType TK_COLON TK_FIELDID TK_SEM
+ *  P27: fieldType           → primitiveDatatype
+ *  P28: fieldType           → constructedDatatype
+ *  P29: moreFields          → fieldDefinition moreFields
+ *  P30: moreFields          → ε
+ *  P31: declarations        → declaration declarations
+ *  P32: declarations        → ε
+ *  P33: declaration         → TK_TYPE dataType TK_COLON TK_ID globalOrNot TK_SEM
+ *  P34: globalOrNot         → TK_COLON TK_GLOBAL
+ *  P35: globalOrNot         → ε
+ *  P36: otherStmts          → stmt otherStmts
+ *  P37: otherStmts          → ε
+ *  P38: stmt                → assignmentStmt
+ *  P39: stmt                → iterativeStmt
+ *  P40: stmt                → conditionalStmt
+ *  P41: stmt                → ioStmt
+ *  P42: stmt                → funCallStmt
+ *  P43: assignmentStmt      → singleOrRecId TK_ASSIGNOP expr TK_SEM
+ *  P44: singleOrRecId       → TK_ID optionSingleConstructed
+ *  P45: optionSingleConstructed → ε
+ *  P46: optionSingleConstructed → oneExpansion moreExpansions
+ *  P47: oneExpansion        → TK_DOT TK_FIELDID
+ *  P48: moreExpansions      → oneExpansion moreExpansions
+ *  P49: moreExpansions      → ε
+ *  P50: funCallStmt         → outputParameters TK_CALL TK_FUNID TK_WITH TK_PARAMETERS inputParameters TK_SEM
+ *  P51: outputParameters    → TK_SQL idList TK_SQR TK_ASSIGNOP
+ *  P52: outputParameters    → ε
+ *  P53: inputParameters     → TK_SQL idList TK_SQR
+ *  P54: iterativeStmt       → TK_WHILE TK_OP boolExpr TK_CL stmt otherStmts TK_ENDWHILE
+ *  P55: conditionalStmt     → TK_IF TK_OP boolExpr TK_CL TK_THEN stmt otherStmts elsePart
+ *  P56: elsePart            → TK_ELSE stmt otherStmts TK_ENDIF
+ *  P57: elsePart            → TK_ENDIF
+ *  P58: ioStmt              → TK_READ TK_OP var TK_CL TK_SEM
+ *  P59: ioStmt              → TK_WRITE TK_OP var TK_CL TK_SEM
+ *  P60: expr                → term exprPrime
+ *  P61: exprPrime           → lowPrecOp term exprPrime
+ *  P62: exprPrime           → ε
+ *  P63: term                → factor termPrime
+ *  P64: termPrime           → highPrecOp factor termPrime
+ *  P65: termPrime           → ε
+ *  P66: factor              → TK_OP expr TK_CL
+ *  P67: factor              → var
+ *  P68: highPrecOp          → TK_MUL
+ *  P69: highPrecOp          → TK_DIV
+ *  P70: lowPrecOp           → TK_PLUS
+ *  P71: lowPrecOp           → TK_MINUS
+ *  P72: boolExpr            → TK_OP boolExpr TK_CL logicalOp TK_OP boolExpr TK_CL
+ *  P73: boolExpr            → var relOp var
+ *  P74: boolExpr            → TK_NOT TK_OP boolExpr TK_CL
+ *  P75: var                 → singleOrRecId
+ *  P76: var                 → TK_NUM
+ *  P77: var                 → TK_RNUM
+ *  P78: logicalOp           → TK_AND
+ *  P79: logicalOp           → TK_OR
+ *  P80: relOp               → TK_LT
+ *  P81: relOp               → TK_LE
+ *  P82: relOp               → TK_EQ
+ *  P83: relOp               → TK_GT
+ *  P84: relOp               → TK_GE
+ *  P85: relOp               → TK_NE
+ *  P86: returnStmt          → TK_RETURN optReturnVal TK_SEM
+ *  P87: optReturnVal        → TK_SQL idList TK_SQR
+ *  P88: optReturnVal        → ε
+ *  P89: idList              → TK_ID moreIds
+ *  P90: moreIds             → TK_COMMA idList
+ *  P91: moreIds             → ε
+ *  P92: definetypeStmt      → TK_DEFINETYPE A TK_RUID TK_AS TK_RUID
+ *  P93: A                   → TK_RECORD
+ *  P94: A                   → TK_UNION
  */
 
 void initGrammar(Grammar *G)
@@ -125,166 +167,306 @@ void initGrammar(Grammar *G)
     /* P2: otherFunctions → ε */
     { addProd(G, NT_OTHER_FUNCTIONS, NULL, NULL, 0); }
 
-    /* P3: function → TK_FUNID input output stmts TK_END */
-    { int it[]={T,NT,NT,NT,T}; int sy[]={TK_FUNID,NT_INPUT,NT_OUTPUT,NT_STMTS,TK_END};
-      addProd(G, NT_FUNCTION, it, sy, 5); }
+    /* P3: function → TK_FUNID input_par output_par TK_SEM stmts TK_END */
+    { int it[]={T,NT,NT,T,NT,T};
+      int sy[]={TK_FUNID,NT_INPUT_PAR,NT_OUTPUT_PAR,TK_SEM,NT_STMTS,TK_END};
+      addProd(G, NT_FUNCTION, it, sy, 6); }
 
     /* P4: mainFunction → TK_MAIN stmts TK_END */
     { int it[]={T,NT,T}; int sy[]={TK_MAIN,NT_STMTS,TK_END};
       addProd(G, NT_MAIN_FUNCTION, it, sy, 3); }
 
-    /* P5: input → TK_INPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR */
+    /* P5: input_par → TK_INPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR */
     { int it[]={T,T,T,T,NT,T};
       int sy[]={TK_INPUT,TK_PARAMETER,TK_LIST,TK_SQL,NT_PARAMETER_LIST,TK_SQR};
-      addProd(G, NT_INPUT, it, sy, 6); }
+      addProd(G, NT_INPUT_PAR, it, sy, 6); }
 
-    /* P6: input → ε */
-    { addProd(G, NT_INPUT, NULL, NULL, 0); }
+    /* P6: output_par → TK_OUTPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR */
+    { int it[]={T,T,T,T,NT,T};
+      int sy[]={TK_OUTPUT,TK_PARAMETER,TK_LIST,TK_SQL,NT_PARAMETER_LIST,TK_SQR};
+      addProd(G, NT_OUTPUT_PAR, it, sy, 6); }
 
-    /* P7: output → TK_OUTPUT TK_PARAMETER TK_LIST TK_SQL parameterList TK_SQR TK_SEM */
-    { int it[]={T,T,T,T,NT,T,T};
-      int sy[]={TK_OUTPUT,TK_PARAMETER,TK_LIST,TK_SQL,NT_PARAMETER_LIST,TK_SQR,TK_SEM};
-      addProd(G, NT_OUTPUT, it, sy, 7); }
+    /* P7: output_par → ε */
+    { addProd(G, NT_OUTPUT_PAR, NULL, NULL, 0); }
 
-    /* P8: output → ε */
-    { addProd(G, NT_OUTPUT, NULL, NULL, 0); }
-
-    /* P9: parameterList → dataType TK_ID morePL */
-    { int it[]={NT,T,NT}; int sy[]={NT_DATA_TYPE,TK_ID,NT_MORE_PL};
+    /* P8: parameterList → dataType TK_ID remainingList */
+    { int it[]={NT,T,NT}; int sy[]={NT_DATA_TYPE,TK_ID,NT_REMAINING_LIST};
       addProd(G, NT_PARAMETER_LIST, it, sy, 3); }
 
-    /* P10: morePL → TK_COMMA dataType TK_ID morePL */
-    { int it[]={T,NT,T,NT}; int sy[]={TK_COMMA,NT_DATA_TYPE,TK_ID,NT_MORE_PL};
-      addProd(G, NT_MORE_PL, it, sy, 4); }
+    /* P9: dataType → primitiveDatatype */
+    { int it[]={NT}; int sy[]={NT_PRIMITIVE_DATATYPE};
+      addProd(G, NT_DATA_TYPE, it, sy, 1); }
 
-    /* P11: morePL → ε */
-    { addProd(G, NT_MORE_PL, NULL, NULL, 0); }
+    /* P10: dataType → constructedDatatype */
+    { int it[]={NT}; int sy[]={NT_CONSTRUCTED_DATATYPE};
+      addProd(G, NT_DATA_TYPE, it, sy, 1); }
 
-    /* P12: dataType → TK_INT */
+    /* P11: primitiveDatatype → TK_INT */
     { int it[]={T}; int sy[]={TK_INT};
-      addProd(G, NT_DATA_TYPE, it, sy, 1); }
+      addProd(G, NT_PRIMITIVE_DATATYPE, it, sy, 1); }
 
-    /* P13: dataType → TK_REAL */
+    /* P12: primitiveDatatype → TK_REAL */
     { int it[]={T}; int sy[]={TK_REAL};
-      addProd(G, NT_DATA_TYPE, it, sy, 1); }
+      addProd(G, NT_PRIMITIVE_DATATYPE, it, sy, 1); }
 
-    /* P14: dataType → TK_ID */
-    { int it[]={T}; int sy[]={TK_ID};
-      addProd(G, NT_DATA_TYPE, it, sy, 1); }
+    /* P13: constructedDatatype → TK_RECORD TK_RUID */
+    { int it[]={T,T}; int sy[]={TK_RECORD,TK_RUID};
+      addProd(G, NT_CONSTRUCTED_DATATYPE, it, sy, 2); }
 
-    /* P15: dataType → TK_FIELDID */
-    { int it[]={T}; int sy[]={TK_FIELDID};
-      addProd(G, NT_DATA_TYPE, it, sy, 1); }
+    /* P14: constructedDatatype → TK_UNION TK_RUID */
+    { int it[]={T,T}; int sy[]={TK_UNION,TK_RUID};
+      addProd(G, NT_CONSTRUCTED_DATATYPE, it, sy, 2); }
 
-    /* P16: stmts → stmt stmts */
-    { int it[]={NT,NT}; int sy[]={NT_STMT,NT_STMTS};
-      addProd(G, NT_STMTS, it, sy, 2); }
+    /* P15: constructedDatatype → TK_RUID */
+    { int it[]={T}; int sy[]={TK_RUID};
+      addProd(G, NT_CONSTRUCTED_DATATYPE, it, sy, 1); }
 
-    /* P17: stmts → ε */
-    { addProd(G, NT_STMTS, NULL, NULL, 0); }
+    /* P16: remainingList → TK_COMMA parameterList */
+    { int it[]={T,NT}; int sy[]={TK_COMMA,NT_PARAMETER_LIST};
+      addProd(G, NT_REMAINING_LIST, it, sy, 2); }
 
-    /* P18: stmt → typeStmt */
-    { int it[]={NT}; int sy[]={NT_TYPE_STMT};
-      addProd(G, NT_STMT, it, sy, 1); }
+    /* P17: remainingList → ε */
+    { addProd(G, NT_REMAINING_LIST, NULL, NULL, 0); }
 
-    /* P19: stmt → assignmentStmt */
+    /* P18: stmts → typeDefinitions declarations otherStmts returnStmt */
+    { int it[]={NT,NT,NT,NT};
+      int sy[]={NT_TYPE_DEFINITIONS,NT_DECLARATIONS,NT_OTHER_STMTS,NT_RETURN_STMT};
+      addProd(G, NT_STMTS, it, sy, 4); }
+
+    /* P19: typeDefinitions → actualOrRedefined typeDefinitions */
+    { int it[]={NT,NT}; int sy[]={NT_ACTUAL_OR_REDEFINED,NT_TYPE_DEFINITIONS};
+      addProd(G, NT_TYPE_DEFINITIONS, it, sy, 2); }
+
+    /* P20: typeDefinitions → ε */
+    { addProd(G, NT_TYPE_DEFINITIONS, NULL, NULL, 0); }
+
+    /* P21: actualOrRedefined → typeDefinition */
+    { int it[]={NT}; int sy[]={NT_TYPE_DEFINITION};
+      addProd(G, NT_ACTUAL_OR_REDEFINED, it, sy, 1); }
+
+    /* P22: actualOrRedefined → definetypeStmt */
+    { int it[]={NT}; int sy[]={NT_DEFINETYPE_STMT};
+      addProd(G, NT_ACTUAL_OR_REDEFINED, it, sy, 1); }
+
+    /* P23: typeDefinition → TK_RECORD TK_RUID fieldDefinitions TK_ENDRECORD */
+    { int it[]={T,T,NT,T}; int sy[]={TK_RECORD,TK_RUID,NT_FIELD_DEFINITIONS,TK_ENDRECORD};
+      addProd(G, NT_TYPE_DEFINITION, it, sy, 4); }
+
+    /* P24: typeDefinition → TK_UNION TK_RUID fieldDefinitions TK_ENDUNION */
+    { int it[]={T,T,NT,T}; int sy[]={TK_UNION,TK_RUID,NT_FIELD_DEFINITIONS,TK_ENDUNION};
+      addProd(G, NT_TYPE_DEFINITION, it, sy, 4); }
+
+    /* P25: fieldDefinitions → fieldDefinition fieldDefinition moreFields */
+    { int it[]={NT,NT,NT};
+      int sy[]={NT_FIELD_DEFINITION,NT_FIELD_DEFINITION,NT_MORE_FIELDS};
+      addProd(G, NT_FIELD_DEFINITIONS, it, sy, 3); }
+
+    /* P26: fieldDefinition → TK_TYPE fieldType TK_COLON TK_FIELDID TK_SEM */
+    { int it[]={T,NT,T,T,T};
+      int sy[]={TK_TYPE,NT_FIELD_TYPE,TK_COLON,TK_FIELDID,TK_SEM};
+      addProd(G, NT_FIELD_DEFINITION, it, sy, 5); }
+
+    /* P27: fieldType → primitiveDatatype */
+    { int it[]={NT}; int sy[]={NT_PRIMITIVE_DATATYPE};
+      addProd(G, NT_FIELD_TYPE, it, sy, 1); }
+
+    /* P28: fieldType → constructedDatatype */
+    { int it[]={NT}; int sy[]={NT_CONSTRUCTED_DATATYPE};
+      addProd(G, NT_FIELD_TYPE, it, sy, 1); }
+
+    /* P29: moreFields → fieldDefinition moreFields */
+    { int it[]={NT,NT}; int sy[]={NT_FIELD_DEFINITION,NT_MORE_FIELDS};
+      addProd(G, NT_MORE_FIELDS, it, sy, 2); }
+
+    /* P30: moreFields → ε */
+    { addProd(G, NT_MORE_FIELDS, NULL, NULL, 0); }
+
+    /* P31: declarations → declaration declarations */
+    { int it[]={NT,NT}; int sy[]={NT_DECLARATION,NT_DECLARATIONS};
+      addProd(G, NT_DECLARATIONS, it, sy, 2); }
+
+    /* P32: declarations → ε */
+    { addProd(G, NT_DECLARATIONS, NULL, NULL, 0); }
+
+    /* P33: declaration → TK_TYPE dataType TK_COLON TK_ID globalOrNot TK_SEM */
+    { int it[]={T,NT,T,T,NT,T};
+      int sy[]={TK_TYPE,NT_DATA_TYPE,TK_COLON,TK_ID,NT_GLOBAL_OR_NOT,TK_SEM};
+      addProd(G, NT_DECLARATION, it, sy, 6); }
+
+    /* P34: globalOrNot → TK_COLON TK_GLOBAL */
+    { int it[]={T,T}; int sy[]={TK_COLON,TK_GLOBAL};
+      addProd(G, NT_GLOBAL_OR_NOT, it, sy, 2); }
+
+    /* P35: globalOrNot → ε */
+    { addProd(G, NT_GLOBAL_OR_NOT, NULL, NULL, 0); }
+
+    /* P36: otherStmts → stmt otherStmts */
+    { int it[]={NT,NT}; int sy[]={NT_STMT,NT_OTHER_STMTS};
+      addProd(G, NT_OTHER_STMTS, it, sy, 2); }
+
+    /* P37: otherStmts → ε */
+    { addProd(G, NT_OTHER_STMTS, NULL, NULL, 0); }
+
+    /* P38: stmt → assignmentStmt */
     { int it[]={NT}; int sy[]={NT_ASSIGNMENT_STMT};
       addProd(G, NT_STMT, it, sy, 1); }
 
-    /* P20: stmt → callAssignStmt */
-    { int it[]={NT}; int sy[]={NT_CALL_ASSIGN_STMT};
-      addProd(G, NT_STMT, it, sy, 1); }
-
-    /* P21: stmt → iterativeStmt */
+    /* P39: stmt → iterativeStmt */
     { int it[]={NT}; int sy[]={NT_ITERATIVE_STMT};
       addProd(G, NT_STMT, it, sy, 1); }
 
-    /* P22: stmt → conditionalStmt */
+    /* P40: stmt → conditionalStmt */
     { int it[]={NT}; int sy[]={NT_CONDITIONAL_STMT};
       addProd(G, NT_STMT, it, sy, 1); }
 
-    /* P23: stmt → ioStmt */
+    /* P41: stmt → ioStmt */
     { int it[]={NT}; int sy[]={NT_IO_STMT};
       addProd(G, NT_STMT, it, sy, 1); }
 
-    /* P24: stmt → returnStmt */
-    { int it[]={NT}; int sy[]={NT_RETURN_STMT};
+    /* P42: stmt → funCallStmt */
+    { int it[]={NT}; int sy[]={NT_FUN_CALL_STMT};
       addProd(G, NT_STMT, it, sy, 1); }
 
-    /* P25: typeStmt → TK_TYPE dataType TK_COLON TK_ID TK_SEM */
-    { int it[]={T,NT,T,T,T}; int sy[]={TK_TYPE,NT_DATA_TYPE,TK_COLON,TK_ID,TK_SEM};
-      addProd(G, NT_TYPE_STMT, it, sy, 5); }
-
-    /* P26: assignmentStmt → TK_ID TK_ASSIGNOP expr TK_SEM */
-    { int it[]={T,T,NT,T}; int sy[]={TK_ID,TK_ASSIGNOP,NT_EXPR,TK_SEM};
+    /* P43: assignmentStmt → singleOrRecId TK_ASSIGNOP expr TK_SEM */
+    { int it[]={NT,T,NT,T}; int sy[]={NT_SINGLE_OR_REC_ID,TK_ASSIGNOP,NT_EXPR,TK_SEM};
       addProd(G, NT_ASSIGNMENT_STMT, it, sy, 4); }
 
-    /* P27: callAssignStmt → TK_SQL TK_ID TK_SQR TK_ASSIGNOP callStmt TK_SEM */
-    { int it[]={T,T,T,T,NT,T};
-      int sy[]={TK_SQL,TK_ID,TK_SQR,TK_ASSIGNOP,NT_CALL_STMT,TK_SEM};
-      addProd(G, NT_CALL_ASSIGN_STMT, it, sy, 6); }
+    /* P44: singleOrRecId → TK_ID optionSingleConstructed */
+    { int it[]={T,NT}; int sy[]={TK_ID,NT_OPTION_SINGLE_CONSTRUCTED};
+      addProd(G, NT_SINGLE_OR_REC_ID, it, sy, 2); }
 
-    /* P28: callStmt → TK_CALL TK_FUNID TK_WITH TK_PARAMETERS TK_SQL actualParamList TK_SQR */
-    { int it[]={T,T,T,T,T,NT,T};
-      int sy[]={TK_CALL,TK_FUNID,TK_WITH,TK_PARAMETERS,TK_SQL,NT_ACTUAL_PARAM_LIST,TK_SQR};
-      addProd(G, NT_CALL_STMT, it, sy, 7); }
+    /* P45: optionSingleConstructed → ε */
+    { addProd(G, NT_OPTION_SINGLE_CONSTRUCTED, NULL, NULL, 0); }
 
-    /* P29: actualParamList → TK_ID moreActual */
-    { int it[]={T,NT}; int sy[]={TK_ID,NT_MORE_ACTUAL};
-      addProd(G, NT_ACTUAL_PARAM_LIST, it, sy, 2); }
+    /* P46: optionSingleConstructed → oneExpansion moreExpansions */
+    { int it[]={NT,NT}; int sy[]={NT_ONE_EXPANSION,NT_MORE_EXPANSIONS};
+      addProd(G, NT_OPTION_SINGLE_CONSTRUCTED, it, sy, 2); }
 
-    /* P30: moreActual → TK_COMMA TK_ID moreActual */
-    { int it[]={T,T,NT}; int sy[]={TK_COMMA,TK_ID,NT_MORE_ACTUAL};
-      addProd(G, NT_MORE_ACTUAL, it, sy, 3); }
+    /* P47: oneExpansion → TK_DOT TK_FIELDID */
+    { int it[]={T,T}; int sy[]={TK_DOT,TK_FIELDID};
+      addProd(G, NT_ONE_EXPANSION, it, sy, 2); }
 
-    /* P31: moreActual → ε */
-    { addProd(G, NT_MORE_ACTUAL, NULL, NULL, 0); }
+    /* P48: moreExpansions → oneExpansion moreExpansions */
+    { int it[]={NT,NT}; int sy[]={NT_ONE_EXPANSION,NT_MORE_EXPANSIONS};
+      addProd(G, NT_MORE_EXPANSIONS, it, sy, 2); }
 
-    /* P32: iterativeStmt → TK_WHILE TK_OP boolExpr TK_CL stmts TK_ENDWHILE */
-    { int it[]={T,T,NT,T,NT,T};
-      int sy[]={TK_WHILE,TK_OP,NT_BOOL_EXPR,TK_CL,NT_STMTS,TK_ENDWHILE};
-      addProd(G, NT_ITERATIVE_STMT, it, sy, 6); }
+    /* P49: moreExpansions → ε */
+    { addProd(G, NT_MORE_EXPANSIONS, NULL, NULL, 0); }
 
-    /* P33: conditionalStmt → TK_IF TK_OP boolExpr TK_CL TK_THEN stmts elseStmt TK_ENDIF */
-    { int it[]={T,T,NT,T,T,NT,NT,T};
-      int sy[]={TK_IF,TK_OP,NT_BOOL_EXPR,TK_CL,TK_THEN,NT_STMTS,NT_ELSE_STMT,TK_ENDIF};
+    /* P50: funCallStmt → outputParameters TK_CALL TK_FUNID TK_WITH TK_PARAMETERS inputParameters TK_SEM */
+    { int it[]={NT,T,T,T,T,NT,T};
+      int sy[]={NT_OUTPUT_PARAMETERS,TK_CALL,TK_FUNID,TK_WITH,TK_PARAMETERS,NT_INPUT_PARAMETERS,TK_SEM};
+      addProd(G, NT_FUN_CALL_STMT, it, sy, 7); }
+
+    /* P51: outputParameters → TK_SQL idList TK_SQR TK_ASSIGNOP */
+    { int it[]={T,NT,T,T}; int sy[]={TK_SQL,NT_ID_LIST,TK_SQR,TK_ASSIGNOP};
+      addProd(G, NT_OUTPUT_PARAMETERS, it, sy, 4); }
+
+    /* P52: outputParameters → ε */
+    { addProd(G, NT_OUTPUT_PARAMETERS, NULL, NULL, 0); }
+
+    /* P53: inputParameters → TK_SQL idList TK_SQR */
+    { int it[]={T,NT,T}; int sy[]={TK_SQL,NT_ID_LIST,TK_SQR};
+      addProd(G, NT_INPUT_PARAMETERS, it, sy, 3); }
+
+    /* P54: iterativeStmt → TK_WHILE TK_OP boolExpr TK_CL stmt otherStmts TK_ENDWHILE */
+    { int it[]={T,T,NT,T,NT,NT,T};
+      int sy[]={TK_WHILE,TK_OP,NT_BOOL_EXPR,TK_CL,NT_STMT,NT_OTHER_STMTS,TK_ENDWHILE};
+      addProd(G, NT_ITERATIVE_STMT, it, sy, 7); }
+
+    /* P55: conditionalStmt → TK_IF TK_OP boolExpr TK_CL TK_THEN stmt otherStmts elsePart */
+    { int it[]={T,T,NT,T,T,NT,NT,NT};
+      int sy[]={TK_IF,TK_OP,NT_BOOL_EXPR,TK_CL,TK_THEN,NT_STMT,NT_OTHER_STMTS,NT_ELSE_PART};
       addProd(G, NT_CONDITIONAL_STMT, it, sy, 8); }
 
-    /* P34: elseStmt → TK_ELSE stmts */
-    { int it[]={T,NT}; int sy[]={TK_ELSE,NT_STMTS};
-      addProd(G, NT_ELSE_STMT, it, sy, 2); }
+    /* P56: elsePart → TK_ELSE stmt otherStmts TK_ENDIF */
+    { int it[]={T,NT,NT,T}; int sy[]={TK_ELSE,NT_STMT,NT_OTHER_STMTS,TK_ENDIF};
+      addProd(G, NT_ELSE_PART, it, sy, 4); }
 
-    /* P35: elseStmt → ε */
-    { addProd(G, NT_ELSE_STMT, NULL, NULL, 0); }
+    /* P57: elsePart → TK_ENDIF */
+    { int it[]={T}; int sy[]={TK_ENDIF};
+      addProd(G, NT_ELSE_PART, it, sy, 1); }
 
-    /* P36: ioStmt → TK_READ TK_OP TK_ID TK_CL TK_SEM */
-    { int it[]={T,T,T,T,T}; int sy[]={TK_READ,TK_OP,TK_ID,TK_CL,TK_SEM};
+    /* P58: ioStmt → TK_READ TK_OP var TK_CL TK_SEM */
+    { int it[]={T,T,NT,T,T}; int sy[]={TK_READ,TK_OP,NT_VAR,TK_CL,TK_SEM};
       addProd(G, NT_IO_STMT, it, sy, 5); }
 
-    /* P37: ioStmt → TK_WRITE TK_OP expr TK_CL TK_SEM */
-    { int it[]={T,T,NT,T,T}; int sy[]={TK_WRITE,TK_OP,NT_EXPR,TK_CL,TK_SEM};
+    /* P59: ioStmt → TK_WRITE TK_OP var TK_CL TK_SEM */
+    { int it[]={T,T,NT,T,T}; int sy[]={TK_WRITE,TK_OP,NT_VAR,TK_CL,TK_SEM};
       addProd(G, NT_IO_STMT, it, sy, 5); }
 
-    /* P38: returnStmt → TK_RETURN optReturnVal TK_SEM */
-    { int it[]={T,NT,T}; int sy[]={TK_RETURN,NT_OPT_RETURN_VAL,TK_SEM};
-      addProd(G, NT_RETURN_STMT, it, sy, 3); }
+    /* P60: expr → term exprPrime */
+    { int it[]={NT,NT}; int sy[]={NT_TERM,NT_EXPR_PRIME};
+      addProd(G, NT_EXPR, it, sy, 2); }
 
-    /* P39: optReturnVal → TK_SQL TK_ID TK_SQR */
-    { int it[]={T,T,T}; int sy[]={TK_SQL,TK_ID,TK_SQR};
-      addProd(G, NT_OPT_RETURN_VAL, it, sy, 3); }
+    /* P61: exprPrime → lowPrecOp term exprPrime */
+    { int it[]={NT,NT,NT}; int sy[]={NT_LOW_PREC_OP,NT_TERM,NT_EXPR_PRIME};
+      addProd(G, NT_EXPR_PRIME, it, sy, 3); }
 
-    /* P40: optReturnVal → ε */
-    { addProd(G, NT_OPT_RETURN_VAL, NULL, NULL, 0); }
+    /* P62: exprPrime → ε */
+    { addProd(G, NT_EXPR_PRIME, NULL, NULL, 0); }
 
-    /* P41: boolExpr → expr relOp expr */
-    { int it[]={NT,NT,NT}; int sy[]={NT_EXPR,NT_REL_OP,NT_EXPR};
+    /* P63: term → factor termPrime */
+    { int it[]={NT,NT}; int sy[]={NT_FACTOR,NT_TERM_PRIME};
+      addProd(G, NT_TERM, it, sy, 2); }
+
+    /* P64: termPrime → highPrecOp factor termPrime */
+    { int it[]={NT,NT,NT}; int sy[]={NT_HIGH_PREC_OP,NT_FACTOR,NT_TERM_PRIME};
+      addProd(G, NT_TERM_PRIME, it, sy, 3); }
+
+    /* P65: termPrime → ε */
+    { addProd(G, NT_TERM_PRIME, NULL, NULL, 0); }
+
+    /* P66: factor → TK_OP expr TK_CL */
+    { int it[]={T,NT,T}; int sy[]={TK_OP,NT_EXPR,TK_CL};
+      addProd(G, NT_FACTOR, it, sy, 3); }
+
+    /* P67: factor → var */
+    { int it[]={NT}; int sy[]={NT_VAR};
+      addProd(G, NT_FACTOR, it, sy, 1); }
+
+    /* P68: highPrecOp → TK_MUL */
+    { int it[]={T}; int sy[]={TK_MUL}; addProd(G, NT_HIGH_PREC_OP, it, sy, 1); }
+
+    /* P69: highPrecOp → TK_DIV */
+    { int it[]={T}; int sy[]={TK_DIV}; addProd(G, NT_HIGH_PREC_OP, it, sy, 1); }
+
+    /* P70: lowPrecOp → TK_PLUS */
+    { int it[]={T}; int sy[]={TK_PLUS}; addProd(G, NT_LOW_PREC_OP, it, sy, 1); }
+
+    /* P71: lowPrecOp → TK_MINUS */
+    { int it[]={T}; int sy[]={TK_MINUS}; addProd(G, NT_LOW_PREC_OP, it, sy, 1); }
+
+    /* P72: boolExpr → TK_OP boolExpr TK_CL logicalOp TK_OP boolExpr TK_CL */
+    { int it[]={T,NT,T,NT,T,NT,T};
+      int sy[]={TK_OP,NT_BOOL_EXPR,TK_CL,NT_LOGICAL_OP,TK_OP,NT_BOOL_EXPR,TK_CL};
+      addProd(G, NT_BOOL_EXPR, it, sy, 7); }
+
+    /* P73: boolExpr → var relOp var */
+    { int it[]={NT,NT,NT}; int sy[]={NT_VAR,NT_REL_OP,NT_VAR};
       addProd(G, NT_BOOL_EXPR, it, sy, 3); }
 
-    /* P42: boolExpr → TK_NOT boolExpr */
-    { int it[]={T,NT}; int sy[]={TK_NOT,NT_BOOL_EXPR};
-      addProd(G, NT_BOOL_EXPR, it, sy, 2); }
+    /* P74: boolExpr → TK_NOT TK_OP boolExpr TK_CL */
+    { int it[]={T,T,NT,T}; int sy[]={TK_NOT,TK_OP,NT_BOOL_EXPR,TK_CL};
+      addProd(G, NT_BOOL_EXPR, it, sy, 4); }
 
-    /* P43–P48: relOp → TK_LT | TK_LE | TK_EQ | TK_GT | TK_GE | TK_NE */
+    /* P75: var → singleOrRecId */
+    { int it[]={NT}; int sy[]={NT_SINGLE_OR_REC_ID};
+      addProd(G, NT_VAR, it, sy, 1); }
+
+    /* P76: var → TK_NUM */
+    { int it[]={T}; int sy[]={TK_NUM}; addProd(G, NT_VAR, it, sy, 1); }
+
+    /* P77: var → TK_RNUM */
+    { int it[]={T}; int sy[]={TK_RNUM}; addProd(G, NT_VAR, it, sy, 1); }
+
+    /* P78: logicalOp → TK_AND */
+    { int it[]={T}; int sy[]={TK_AND}; addProd(G, NT_LOGICAL_OP, it, sy, 1); }
+
+    /* P79: logicalOp → TK_OR */
+    { int it[]={T}; int sy[]={TK_OR}; addProd(G, NT_LOGICAL_OP, it, sy, 1); }
+
+    /* P80–P85: relOp → TK_LT | TK_LE | TK_EQ | TK_GT | TK_GE | TK_NE */
     { int it[]={T}; int sy[]={TK_LT}; addProd(G, NT_REL_OP, it, sy, 1); }
     { int it[]={T}; int sy[]={TK_LE}; addProd(G, NT_REL_OP, it, sy, 1); }
     { int it[]={T}; int sy[]={TK_EQ}; addProd(G, NT_REL_OP, it, sy, 1); }
@@ -292,48 +474,38 @@ void initGrammar(Grammar *G)
     { int it[]={T}; int sy[]={TK_GE}; addProd(G, NT_REL_OP, it, sy, 1); }
     { int it[]={T}; int sy[]={TK_NE}; addProd(G, NT_REL_OP, it, sy, 1); }
 
-    /* P49: expr → term exprPrime */
-    { int it[]={NT,NT}; int sy[]={NT_TERM,NT_EXPR_PRIME};
-      addProd(G, NT_EXPR, it, sy, 2); }
+    /* P86: returnStmt → TK_RETURN optReturnVal TK_SEM */
+    { int it[]={T,NT,T}; int sy[]={TK_RETURN,NT_OPT_RETURN_VAL,TK_SEM};
+      addProd(G, NT_RETURN_STMT, it, sy, 3); }
 
-    /* P50: exprPrime → TK_PLUS term exprPrime */
-    { int it[]={T,NT,NT}; int sy[]={TK_PLUS,NT_TERM,NT_EXPR_PRIME};
-      addProd(G, NT_EXPR_PRIME, it, sy, 3); }
+    /* P87: optReturnVal → TK_SQL idList TK_SQR */
+    { int it[]={T,NT,T}; int sy[]={TK_SQL,NT_ID_LIST,TK_SQR};
+      addProd(G, NT_OPT_RETURN_VAL, it, sy, 3); }
 
-    /* P51: exprPrime → TK_MINUS term exprPrime */
-    { int it[]={T,NT,NT}; int sy[]={TK_MINUS,NT_TERM,NT_EXPR_PRIME};
-      addProd(G, NT_EXPR_PRIME, it, sy, 3); }
+    /* P88: optReturnVal → ε */
+    { addProd(G, NT_OPT_RETURN_VAL, NULL, NULL, 0); }
 
-    /* P52: exprPrime → ε */
-    { addProd(G, NT_EXPR_PRIME, NULL, NULL, 0); }
+    /* P89: idList → TK_ID moreIds */
+    { int it[]={T,NT}; int sy[]={TK_ID,NT_MORE_IDS};
+      addProd(G, NT_ID_LIST, it, sy, 2); }
 
-    /* P53: term → factor termPrime */
-    { int it[]={NT,NT}; int sy[]={NT_FACTOR,NT_TERM_PRIME};
-      addProd(G, NT_TERM, it, sy, 2); }
+    /* P90: moreIds → TK_COMMA idList */
+    { int it[]={T,NT}; int sy[]={TK_COMMA,NT_ID_LIST};
+      addProd(G, NT_MORE_IDS, it, sy, 2); }
 
-    /* P54: termPrime → TK_MUL factor termPrime */
-    { int it[]={T,NT,NT}; int sy[]={TK_MUL,NT_FACTOR,NT_TERM_PRIME};
-      addProd(G, NT_TERM_PRIME, it, sy, 3); }
+    /* P91: moreIds → ε */
+    { addProd(G, NT_MORE_IDS, NULL, NULL, 0); }
 
-    /* P55: termPrime → TK_DIV factor termPrime */
-    { int it[]={T,NT,NT}; int sy[]={TK_DIV,NT_FACTOR,NT_TERM_PRIME};
-      addProd(G, NT_TERM_PRIME, it, sy, 3); }
+    /* P92: definetypeStmt → TK_DEFINETYPE A TK_RUID TK_AS TK_RUID */
+    { int it[]={T,NT,T,T,T};
+      int sy[]={TK_DEFINETYPE,NT_A,TK_RUID,TK_AS,TK_RUID};
+      addProd(G, NT_DEFINETYPE_STMT, it, sy, 5); }
 
-    /* P56: termPrime → ε */
-    { addProd(G, NT_TERM_PRIME, NULL, NULL, 0); }
+    /* P93: A → TK_RECORD */
+    { int it[]={T}; int sy[]={TK_RECORD}; addProd(G, NT_A, it, sy, 1); }
 
-    /* P57: factor → TK_OP expr TK_CL */
-    { int it[]={T,NT,T}; int sy[]={TK_OP,NT_EXPR,TK_CL};
-      addProd(G, NT_FACTOR, it, sy, 3); }
-
-    /* P58: factor → TK_ID */
-    { int it[]={T}; int sy[]={TK_ID}; addProd(G, NT_FACTOR, it, sy, 1); }
-
-    /* P59: factor → TK_NUM */
-    { int it[]={T}; int sy[]={TK_NUM}; addProd(G, NT_FACTOR, it, sy, 1); }
-
-    /* P60: factor → TK_RNUM */
-    { int it[]={T}; int sy[]={TK_RNUM}; addProd(G, NT_FACTOR, it, sy, 1); }
+    /* P94: A → TK_UNION */
+    { int it[]={T}; int sy[]={TK_UNION}; addProd(G, NT_A, it, sy, 1); }
 }
 
 #undef T

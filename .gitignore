@@ -6,9 +6,10 @@ stage1exe
 
 # Temporary test outputs
 out.txt
+out_t1.txt
 cleanFile.txt
 tokens_out*.txt
 
 # Editor / OS specifics
 .vscode/
-.DS_Store
+.DS_Store_codeql_detected_source_root
