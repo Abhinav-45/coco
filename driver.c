@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "lexer.h"
+#include "parser.h"
 
 int main(int argc, char *argv[])
 {
@@ -105,12 +107,40 @@ int main(int argc, char *argv[])
         }
 
         case 3:
-            printf("\n[Notice] Option 3 (Parser) is not implemented yet. Only Lexical analyzer module developed.\n");
+        {
+            Grammar G;
+            initGrammar(&G);
+            FirstAndFollow F = computeFirstAndFollowSets(&G);
+            ParseTable T;
+            createParseTable(&F, &G, T);
+
+            printf("\n--- Parsing '%s' ---\n", argv[1]);
+            ParseTree PT = parseInputSourceCode(argv[1], T, &G);
+            if (PT) {
+                printParseTree(PT, argv[2]);
+                freeTree(PT);
+            }
             break;
+        }
 
         case 4:
-            printf("\n[Notice] Option 4 (Timer) relies on both Lexer and Parser. Check back later.\n");
+        {
+            clock_t start = clock();
+
+            Grammar G;
+            initGrammar(&G);
+            FirstAndFollow F = computeFirstAndFollowSets(&G);
+            ParseTable T;
+            createParseTable(&F, &G, T);
+
+            ParseTree PT = parseInputSourceCode(argv[1], T, &G);
+            if (PT) freeTree(PT);
+
+            clock_t end = clock();
+            double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+            printf("\nTotal time taken by lexer + parser: %.6f seconds\n", elapsed);
             break;
+        }
 
         default:
             printf("\nInvalid option. Please try again.\n");
