@@ -25,7 +25,7 @@ const char *nonTerminalStrings[] = {
     "conditionalStmt",      "elsePart",             "ioStmt",
     "returnStmt",           "optReturnVal",         "boolExpr",
     "var",                  "logicalOp",            "relOp",
-    "expr",                 "exprPrime",            "term",
+    "arithmeticExpression", "exprPrime",            "term",
     "termPrime",            "factor",               "highPrecOp",
     "lowPrecOp",            "idList",               "moreIds",
     "definetypeStmt",       "A"
@@ -805,11 +805,11 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
                     lastErrorLine = curTok->lineNo;
                 }
                 if (errorCountOnLine < MAX_ERRORS_PER_LINE) {
-                    printf("Line %d : Syntax Error : Expected token %s but got %s <%s>\n",
+                    printf("Line %d Error: The token %s for lexeme %s  does not match with the expected token %s\n",
                            curTok->lineNo,
-                           tokenStrings[X.symbol],
                            tokenStrings[curTok->tokenType],
-                           curTok->lexeme);
+                           curTok->lexeme,
+                           tokenStrings[X.symbol]);
                     errorCountOnLine++;
                 }
                 hasError = 1;
@@ -830,7 +830,7 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
                 lastErrorLine = curTok->lineNo;
             }
             if (errorCountOnLine < MAX_ERRORS_PER_LINE) {
-                printf("Line %d : Syntax Error : Unexpected token %s <%s> while parsing %s\n",
+                printf("Line %d Error: Invalid token %s encountered with value %s stack top %s\n",
                        curTok->lineNo,
                        tokenStrings[curTok->tokenType],
                        curTok->lexeme,
@@ -853,6 +853,25 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
                        !isSyncToken(curTok->tokenType)) {
                     free(curTok);
                     curTok = getNextUsableToken(B);
+                }
+                /* If we stopped at a sync token, pop stack symbols until
+                 * we find a terminal that matches or a non-terminal that
+                 * has a valid parse table entry for the current token.
+                 * This reduces cascading errors. */
+                if (curTok->tokenType != TK_EOF &&
+                    isSyncToken(curTok->tokenType)) {
+                    while (top > 0) {
+                        GrammarSymbol topSym = symStack[top - 1];
+                        if (topSym.isTerminal) {
+                            if (topSym.symbol == (int)curTok->tokenType)
+                                break;  /* found matching terminal */
+                        } else {
+                            int pi = T[(NonTerminal)topSym.symbol][curTok->tokenType];
+                            if (pi != -1)
+                                break;  /* NT can accept this token */
+                        }
+                        top--;  /* pop unmatched symbol */
+                    }
                 }
             }
             continue;
