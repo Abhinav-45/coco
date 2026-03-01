@@ -6,6 +6,7 @@ stage1exe
 
 # Temporary test outputs
 out.txt
+out_t1.txt
 cleanFile.txt
 tokens_out*.txt
 
