@@ -1,0 +1,14 @@
+# Compiled objects
+*.o
+
+# Executables
+stage1exe
+
+# Temporary test outputs
+out.txt
+cleanFile.txt
+tokens_out*.txt
+
+# Editor / OS specifics
+.vscode/
+.DS_Store
