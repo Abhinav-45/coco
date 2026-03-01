@@ -705,6 +705,7 @@ void freeTree(TreeNode *node)
 /* ============================================================ */
 
 #define PARSE_STACK_MAX 1024
+#define MAX_ERRORS_PER_LINE 2
 
 /* Skip comments and error tokens; return first real token */
 static tokenInfo getNextUsableToken(twinBuffer B)
@@ -757,8 +758,8 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
 
     tokenInfo curTok = getNextUsableToken(B);
     int hasError = 0;
-    int lastErrLine = -1;       /* track last error line to suppress cascading */
-    int errCountOnLine = 0;     /* count of errors on the same line */
+    int lastErrorLine = -1;       /* track last error line to suppress cascading */
+    int errorCountOnLine = 0;     /* count of errors on the same line */
 
     while (top > 0) {
         GrammarSymbol X    = symStack[top - 1];
@@ -799,17 +800,17 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
                 curTok = getNextUsableToken(B);
             } else {
                 /* Terminal mismatch error */
-                if (curTok->lineNo != lastErrLine) {
-                    errCountOnLine = 0;
-                    lastErrLine = curTok->lineNo;
+                if (curTok->lineNo != lastErrorLine) {
+                    errorCountOnLine = 0;
+                    lastErrorLine = curTok->lineNo;
                 }
-                if (errCountOnLine < 2) {
+                if (errorCountOnLine < MAX_ERRORS_PER_LINE) {
                     printf("Line %d : Syntax Error : Expected token %s but got %s <%s>\n",
                            curTok->lineNo,
                            tokenStrings[X.symbol],
                            tokenStrings[curTok->tokenType],
                            curTok->lexeme);
-                    errCountOnLine++;
+                    errorCountOnLine++;
                 }
                 hasError = 1;
                 /* Pop the unmatched terminal and continue */
@@ -824,17 +825,17 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
 
         if (prodIdx == -1) {
             /* No production: syntax error */
-            if (curTok->lineNo != lastErrLine) {
-                errCountOnLine = 0;
-                lastErrLine = curTok->lineNo;
+            if (curTok->lineNo != lastErrorLine) {
+                errorCountOnLine = 0;
+                lastErrorLine = curTok->lineNo;
             }
-            if (errCountOnLine < 2) {
+            if (errorCountOnLine < MAX_ERRORS_PER_LINE) {
                 printf("Line %d : Syntax Error : Unexpected token %s <%s> while parsing %s\n",
                        curTok->lineNo,
                        tokenStrings[curTok->tokenType],
                        curTok->lexeme,
                        nonTerminalStrings[nt]);
-                errCountOnLine++;
+                errorCountOnLine++;
             }
             hasError = 1;
 
