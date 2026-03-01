@@ -9,7 +9,7 @@
 void initGrammar(Grammar *G);
 FirstAndFollow computeFirstAndFollowSets(Grammar *G);
 void createParseTable(FirstAndFollow *F, Grammar *G, ParseTable T);
-ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G);
+ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, FirstAndFollow *F);
 void printParseTree(ParseTree PT, char *outfile);
 void freeTree(TreeNode *node);
 

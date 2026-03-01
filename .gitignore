@@ -12,4 +12,5 @@ tokens_out*.txt
 
 # Editor / OS specifics
 .vscode/
-.DS_Store_codeql_detected_source_root
+.DS_Store
+_codeql_detected_source_root

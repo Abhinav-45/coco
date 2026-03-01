@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
             createParseTable(&F, &G, T);
 
             printf("\n--- Parsing '%s' ---\n", argv[1]);
-            ParseTree PT = parseInputSourceCode(argv[1], T, &G);
+            ParseTree PT = parseInputSourceCode(argv[1], T, &G, &F);
             if (PT) {
                 printParseTree(PT, argv[2]);
                 freeTree(PT);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
             ParseTable T;
             createParseTable(&F, &G, T);
 
-            ParseTree PT = parseInputSourceCode(argv[1], T, &G);
+            ParseTree PT = parseInputSourceCode(argv[1], T, &G, &F);
             if (PT) freeTree(PT);
 
             clock_t end = clock();
