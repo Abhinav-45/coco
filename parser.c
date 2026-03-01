@@ -765,11 +765,6 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, Fir
         GrammarSymbol X    = symStack[top - 1];
         TreeNode     *Xnod = nodeStack[top - 1];
 
-        if (X.isTerminal)
-            fprintf(stderr, "DBG: top=T:%s tok=%s(%s) ln=%d\n", tokenStrings[X.symbol], tokenStrings[curTok->tokenType], curTok->lexeme, curTok->lineNo);
-        else
-            fprintf(stderr, "DBG: top=NT:%s tok=%s(%s) ln=%d\n", nonTerminalStrings[X.symbol], tokenStrings[curTok->tokenType], curTok->lexeme, curTok->lineNo);
-
         /* ---- EOF sentinel on top ---- */
         if (X.isTerminal && X.symbol == (int)TK_EOF) {
             if (curTok->tokenType == TK_EOF) {
