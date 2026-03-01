@@ -20,7 +20,7 @@ const char *nonTerminalStrings[] = {
     "moreFields",           "declarations",         "declaration",
     "globalOrNot",          "otherStmts",           "stmt",
     "assignmentStmt",       "singleOrRecId",        "optionSingleConstructed",
-    "oneExpansion",         "moreExpansions",        "funCallStmt",
+    "oneExpansion",         "moreExpansions",       "funCallStmt",
     "outputParameters",     "inputParameters",      "iterativeStmt",
     "conditionalStmt",      "elsePart",             "ioStmt",
     "returnStmt",           "optReturnVal",         "boolExpr",
