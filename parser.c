@@ -716,7 +716,15 @@ static tokenInfo getNextUsableToken(twinBuffer B)
     return tk;
 }
 
-ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G)
+/* Check if a token is in the synchronization set */
+static int isSyncToken(TokenType t)
+{
+    return t == TK_SEM || t == TK_ENDRECORD || t == TK_ENDUNION ||
+           t == TK_ENDIF || t == TK_ENDWHILE || t == TK_ELSE ||
+           t == TK_CL || t == TK_SQR || t == TK_END;
+}
+
+ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G, FirstAndFollow *F)
 {
     FILE *fp = fopen(testcaseFile, "r");
     if (!fp) {
@@ -749,6 +757,8 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G)
 
     tokenInfo curTok = getNextUsableToken(B);
     int hasError = 0;
+    int lastErrLine = -1;       /* track last error line to suppress cascading */
+    int errCountOnLine = 0;     /* count of errors on the same line */
 
     while (top > 0) {
         GrammarSymbol X    = symStack[top - 1];
@@ -789,11 +799,18 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G)
                 curTok = getNextUsableToken(B);
             } else {
                 /* Terminal mismatch error */
-                printf("Line %d : Syntax Error : Expected token %s but got %s <%s>\n",
-                       curTok->lineNo,
-                       tokenStrings[X.symbol],
-                       tokenStrings[curTok->tokenType],
-                       curTok->lexeme);
+                if (curTok->lineNo != lastErrLine) {
+                    errCountOnLine = 0;
+                    lastErrLine = curTok->lineNo;
+                }
+                if (errCountOnLine < 2) {
+                    printf("Line %d : Syntax Error : Expected token %s but got %s <%s>\n",
+                           curTok->lineNo,
+                           tokenStrings[X.symbol],
+                           tokenStrings[curTok->tokenType],
+                           curTok->lexeme);
+                    errCountOnLine++;
+                }
                 hasError = 1;
                 /* Pop the unmatched terminal and continue */
                 top--;
@@ -807,23 +824,34 @@ ParseTree parseInputSourceCode(char *testcaseFile, ParseTable T, Grammar *G)
 
         if (prodIdx == -1) {
             /* No production: syntax error */
-            printf("Line %d : Syntax Error : Unexpected token %s <%s> while parsing %s\n",
-                   curTok->lineNo,
-                   tokenStrings[curTok->tokenType],
-                   curTok->lexeme,
-                   nonTerminalStrings[nt]);
+            if (curTok->lineNo != lastErrLine) {
+                errCountOnLine = 0;
+                lastErrLine = curTok->lineNo;
+            }
+            if (errCountOnLine < 2) {
+                printf("Line %d : Syntax Error : Unexpected token %s <%s> while parsing %s\n",
+                       curTok->lineNo,
+                       tokenStrings[curTok->tokenType],
+                       curTok->lexeme,
+                       nonTerminalStrings[nt]);
+                errCountOnLine++;
+            }
             hasError = 1;
 
-            /* Panic-mode recovery: skip current token and retry */
+            /* Panic-mode recovery using FOLLOW sets and sync tokens */
+            top--;  /* pop the non-terminal */
+
             if (curTok->tokenType == TK_EOF) {
-                top--;  /* pop NT, will hit EOF sentinel next */
+                /* nothing to skip */
+            } else if (F->follow[nt][curTok->tokenType]) {
+                /* Token is in FOLLOW(NT): keep token, continue parsing */
             } else {
-                free(curTok);
-                curTok = getNextUsableToken(B);
-                /* keep same NT on stack; try with next token */
-                /* but avoid infinite loop: if still no prod, pop NT */
-                if (T[nt][curTok->tokenType] == -1) {
-                    top--;
+                /* Skip tokens until FOLLOW(NT) or sync set or EOF */
+                while (curTok->tokenType != TK_EOF &&
+                       !F->follow[nt][curTok->tokenType] &&
+                       !isSyncToken(curTok->tokenType)) {
+                    free(curTok);
+                    curTok = getNextUsableToken(B);
                 }
             }
             continue;
